@@ -40,10 +40,11 @@ $phantomjs->jasmine("http:/localhost/specs.html", true);
 
 the PhantomJS script, which is being generated:
 ```javascript
-var url  = "http:/localhost/specs.html";
-var system = require('system'), page = require('webpage').create();
+var url = "http:/localhost/specs.html", system = require('system'), page = require('webpage').create();
+page.onConsoleMessage=function(msg) {console.log(msg);};
 
 ...
+
 ```
 the returned JSON (while `$output=true` is passed):
 ```javascript
