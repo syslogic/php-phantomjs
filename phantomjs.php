@@ -46,26 +46,37 @@ class phantomjs {
         
         /* TODO: Page Abstraction */
         $this->page = (object)array(
-            'zoomFactor'    => 1.0,
-            'scrollPosition'=> (object)array('top' => 0, 'left' => 0),
-            'viewportSize'  => (object)array('width' => 1920, 'height' => 1080),
-            'clipRect'      => (object)array('width' => 1920, 'height' => 1080, 'top' => 0, 'left' => 0),
-            'paperSize'     => (object)array('format' => 'A4', 'orientation' => 'portrait', 'margin' => '10mm'),
-            'customHeaders' => (object)array(),
-            'settings'      => (object)array(),
-            'cookies'       => array(),
-            'windowName'    => '',
-            'title'         => '',
-            'content'       => '',
-            'plainText'     => '',
-            'url'           => ''
+            'scrollPosition'   => (object)array('top' => 0, 'left' => 0),
+            'viewportSize'     => (object)array('width' => 1920, 'height' => 1080),
+            'clipRect'         => (object)array('width' => 1920, 'height' => 1080, 'top' => 0, 'left' => 0),
+            'paperSize'        => (object)array('format' => 'A4', 'orientation' => 'portrait', 'margin' => '10mm'),
+            'customHeaders'    => (object)array(),
+            'settings'         => (object)array(
+                'javascriptEnabled'             => true,
+                'loadImages'                    => true,
+                'localToRemoteUrlAccessEnabled' => false,
+                'userAgent'                     => $this->user_agent,
+                // 'username'                      => null,
+                // 'password'                      => null,
+                'XSSAuditingEnabled'            => false,
+                'webSecurityEnabled'            => true,
+                'resourceTimeout'               => 20000
+            ),
+            'devicePixelRatio' => 1.0,
+            'zoomFactor'       => 1.0,
+            'cookies'          => array(),
+            'windowName'       => '',
+            'title'            => '',
+            'content'          => '',
+            'plainText'        => '',
+            'url'              => ''
         );
     }
     
     private function setup_dirs(){
         $this->basedir = dirname(__FILE__).DIRECTORY_SEPARATOR;
-        $this->scripts = $this->basedir.'scripts'.DIRECTORY_SEPARATOR;
-        $this->capture = $this->basedir.'capture'.DIRECTORY_SEPARATOR;
+        $this->scripts = $this->basedir.$this->dirname_scripts.DIRECTORY_SEPARATOR;
+        $this->capture = $this->basedir.$this->dirname_capture.DIRECTORY_SEPARATOR;
         $this->create_dir($this->scripts, true);
         $this->create_dir($this->capture, false);
     }
@@ -97,40 +108,54 @@ class phantomjs {
     public function screenshot($url=false, $output=false, $format='png', $quality=100){
         
         /* TODO: Parameters */
-        if(! $url){if(! $output){return false;} else {return false;}}
         if(in_array($format, $this->screenshot_formats)){$this->screenshot_format = $format;}
         if($quality > 0 && $quality <= 100){$this->screenshot_quality = $quality;}
+        if(! $url){if(! $output){return false;} else {return false;}}
+        else {$parts = parse_url($url);}
         
         /* Viewport Dimensions */
         $width  = $this->getViewportWidth();
         $height = $this->getViewportHeight();
         
-        /* JavaScript Generation */
-        $parts  = parse_url($url);
-        $this->screenshot_file = 'capture'.DIRECTORY_SEPARATOR.str_replace('www.', '', $parts['host']).'_'.crc32($url).'_'.$width.'x'.$height.'.'.$format;
+        /* WebPage Module */
         $this->script = "var page = require('webpage').create();\n";
+        
+        /* Viewport Dimensions */
         $this->script.= "page.viewportSize = {width: {$width}, height: {$height}};\n";
         
         /* Clip Rectangle */
         if($this->screenshot_clip) {
-            $crw    = $this->getClipRectWidth();
-            $crh    = $this->getClipRectHeight();
-            $crt    = $this->getClipRectTop();
-            $crl    = $this->getClipRectLeft();
+            $crw = $this->getClipRectWidth();
+            $crh = $this->getClipRectHeight();
+            $crt = $this->getClipRectTop();
+            $crl = $this->getClipRectLeft();
             $this->script.= "page.clipRect = {top: {$crt}, left: {$crl}, width: {$crw}, height: {$crh}};\n";
         }
         
-        /* Passing the browser's UA */
+        /* User Agent */
         if($this->browser_ua){
             $this->script.= "page.settings.userAgent = '{$this->user_agent}';\n";
         }
         
+        /* Viewport Zoom Factor */
+        if($this->page->zoomFactor < 1.0){
+            $this->script.= "page.zoomFactor = {$this->page->zoomFactor};\n";
+        }
+        
+        /* Pixel Ratio (not yet supported) */
+        if($this->page->devicePixelRatio > 1.0){
+            $this->script.= "page.devicePixelRatio = {$this->page->devicePixelRatio};\n";
+        }
+        
+        /* Capture File */
+        $this->screenshot_file = $this->dirname_capture.DIRECTORY_SEPARATOR.str_replace('www.', '', $parts['host']).'_'.crc32($url).'_'.$width.'x'.$height.'.'.$format;
         $this->script.= "page.open('{$url}', function() {\n\tpage.render('{$this->screenshot_file}', {format: '{$this->screenshot_format}', quality: '{$this->screenshot_quality}'});\n\tphantom.exit();\n});";
         $task = $this->scripts.str_replace('www.', '', $parts['host']).'_'.crc32($this->script).'.js';
+        
+        /* Save & Run */
         file_put_contents($task, $this->script);
         $this->exec($task, $output);
     }
-    
     public function jasmine($url = false, $output= false){
         
         /* JavaScript Generation */
@@ -150,7 +175,6 @@ class phantomjs {
         $this->exec($task, $output);
     }
     
-    
     /* Getters */
     private function getScrollPosition(){
         return $this->page->scrollPosition;
@@ -160,6 +184,9 @@ class phantomjs {
     }
     private function getScrollPositionLeft(){
         return $this->page->scrollPosition->left;
+    }
+    private function getDevicePixelRatio(){
+        return $this->page->devicePixelRatio;
     }
     private function getZoomFactor(){
         return $this->page->zoomFactor;
@@ -198,7 +225,6 @@ class phantomjs {
         return $this->page->paperSize->margin;
     }
     
-    
     /* Setters */
     private function setScrollPosition($top=0, $left=0){
         $this->page->scrollPosition = (object)array('top' => $top, 'left' => $left);
@@ -209,11 +235,14 @@ class phantomjs {
     private function setScrollPositionLeft($value=0){
         $this->page->scrollPosition->left=$value;
     }
+    private function setDevicePixelRatio($ratio = 1.0){
+        if(is_float($ratio) && $ratio >= 1.0){
+            $this->page->devicePixelRatio=$ratio;
+        }
+    }
     private function setZoomFactor($factor = 1.0){
         if(is_float($factor) && $factor > 0.0 && $factor <= 1.0){
             $this->page->zoomFactor=$factor;
-        } else if(is_int($factor) && $factor > 0 && $factor <= 100){
-            $this->page->zoomFactor=$factor/100;
         }
     }
     private function setViewportSize($width, $height){
