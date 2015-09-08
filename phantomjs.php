@@ -144,6 +144,11 @@ class phantomjs {
             $this->script.= "page.zoomFactor = {$this->page->zoomFactor};\n";
         }
         
+        /* Scroll Position */
+        if($this->page->scrollPosition->left > 0 || $this->page->scrollPosition->top > 0){
+            $this->script.= "page.scrollPosition = {left: {$this->page->scrollPosition->left}, top: {$this->page->scrollPosition->top}};\n";
+        }
+        
         /* Pixel Ratio (not yet supported) */
         if($this->page->devicePixelRatio > 1.0){
             $this->script.= "page.devicePixelRatio = {$this->page->devicePixelRatio};\n";
