@@ -32,22 +32,3 @@ the returned JSON (while `$output=true` is passed):
 {"success":true,"script":"\/php-phantomjs\/scripts\/google.com_1293740674.js"}
 
 ```
-
-#### running Jasmine Unit Tests (under development)
-```php
-$phantomjs->jasmine("http:/localhost/specs.html", true);
-```
-
-the PhantomJS script, which is being generated:
-```javascript
-var url = "http:/localhost/specs.html", system = require('system'), page = require('webpage').create();
-page.onConsoleMessage=function(msg) {console.log(msg);};
-
-...
-
-```
-the returned JSON (while `$output=true` is passed):
-```javascript
-{"success":true,"script":"\/php-phantomjs\/specs.html"}
-
-```

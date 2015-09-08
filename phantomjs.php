@@ -164,24 +164,6 @@ class phantomjs {
         file_put_contents($task, $this->script);
         $this->exec($task, $output);
     }
-    public function jasmine($url = false, $output= false){
-        
-        /* JavaScript Generation */
-        $parts  = parse_url($url);
-        $this->script = "var url  = '$url'\n;var system=require('system'), page=require('webpage').create();\npage.onConsoleMessage=function(msg) {console.log(msg);};\n";
-        $this->script.= "page.open(url, function(status) {
-            if (status !== 'success') {
-                console.log('Unable to open ' + url );
-                phantom.exit(1);
-            } else {
-                console.log('opened ' + url );
-                phantom.exit(0);
-            }
-        });";
-        $task = $this->scripts.str_replace('www.', '', $parts['host']).'_jasmine_'.crc32($this->script).'.js';
-        file_put_contents($task, $this->script);
-        $this->exec($task, $output);
-    }
     
     /* Getters */
     private function getScrollPosition(){
