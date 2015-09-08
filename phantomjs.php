@@ -7,32 +7,35 @@
 
 class phantomjs {
     
+    /* configurable */
+    protected $cmd                = 'phantomjs';
+    protected $tag                = 'phantomjs';
+    protected $dirname_scripts    = 'scripts';
+    protected $dirname_capture    = 'capture';
+    protected $screenshot_format  = 'png';
+    protected $screenshot_quality = 100;
+    protected $screenshot_clip    = false;
+    protected $browser_ua         = true;
+    
+    /* accessible */
     protected $page;
-    protected $capture;
-    protected $scripts;
-    protected $script;
     
-    protected $basedir;
-    protected $request;
-    protected $response;
-    
-    protected $url              = null;
-    protected $method           = 'GET';
-    protected $output           = 'json';
-    protected $cmd              = 'phantomjs';
-    protected $tag              = 'phantomjs';
-    
-    private $client_ua;
-    private $browser_ua         = true;
-    private $screenshot_clip    = false;
-    
+    /* private */
+    private $url                  = null;
+    private $method               = 'GET';
+    private $output               = 'json';
+    private $screenshot_formats   = array('png', 'gif', 'jpeg', 'pdf');
     private $screenshot_file;
-    private $supported_formats  = array('png', 'gif', 'jpeg', 'pdf');
-    private $screenshot_format  = 'png';
-    private $screenshot_quality = 100;
-    
+    private $user_agent;
+    private $basedir;
+    private $capture;
+    private $scripts;
+    private $script;
+    private $request;
+    private $response;
+
     function __construct(){
-        $this->client_ua = $_SERVER["HTTP_USER_AGENT"];
+        $this->user_agent = $_SERVER["HTTP_USER_AGENT"];
         $this->setup_dirs();
         $this->setup_webpage();
         $this->sanity_check();
@@ -41,7 +44,7 @@ class phantomjs {
     /* http://phantomjs.org/api/webpage/ */
     private function setup_webpage(){
         
-        /* Page Abstraction */
+        /* TODO: Page Abstraction */
         $this->page = (object)array(
             'zoomFactor'    => 1.0,
             'scrollPosition'=> (object)array('top' => 0, 'left' => 0),
@@ -93,9 +96,9 @@ class phantomjs {
     
     public function screenshot($url=false, $output=false, $format='png', $quality=100){
         
-        /* Parameters */
+        /* TODO: Parameters */
         if(! $url){if(! $output){return false;} else {return false;}}
-        if(in_array($format, $this->supported_formats)){$this->screenshot_format = $format;}
+        if(in_array($format, $this->screenshot_formats)){$this->screenshot_format = $format;}
         if($quality > 0 && $quality <= 100){$this->screenshot_quality = $quality;}
         
         /* Viewport Dimensions */
@@ -110,14 +113,13 @@ class phantomjs {
         
         /* JavaScript Generation */
         $parts  = parse_url($url);
-        $this->screenshot_file = $this->capture.str_replace('www.', '', $parts['host']).'_'.crc32($url).'_'.$width.'x'.$height.'.'.$format;
+        $this->screenshot_file = 'capture'.DIRECTORY_SEPARATOR.str_replace('www.', '', $parts['host']).'_'.crc32($url).'_'.$width.'x'.$height.'.'.$format;
         $this->script = "var page = require('webpage').create();\n";
         $this->script.= "page.viewportSize = {width: {$width}, height: {$height}};\n";
         if($this->screenshot_clip) {$this->script.= "page.clipRect = {top: {$crt}, left: {$crl}, width: {$crw}, height: {$crh}};\n";}
-        if($this->browser_ua)      {$this->script.= "page.settings.userAgent = '{$this->client_ua}';\n";}
+        if($this->browser_ua)      {$this->script.= "page.settings.userAgent = '{$this->user_agent}';\n";}
         $this->script.= "page.open('{$url}', function() {\n\tpage.render('{$this->screenshot_file}', {format: '{$this->screenshot_format}', quality: '{$this->screenshot_quality}'});\n\tphantom.exit();\n});";
         $task = $this->scripts.str_replace('www.', '', $parts['host']).'_'.crc32($this->script).'.js';
-        
         file_put_contents($task, $this->script);
         $this->exec($task, $output);
     }
@@ -162,7 +164,7 @@ class phantomjs {
         return $this->page->viewportSize->width;
     }
     private function getViewportHeight(){
-        return $this->page->viewportSize->width;
+        return $this->page->viewportSize->height;
     }
     private function getClipRectWidth(){
         return $this->page->clipRect->width;
