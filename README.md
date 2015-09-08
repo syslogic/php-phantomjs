@@ -2,7 +2,7 @@
 ###a PHP5 wrapper for the PhantomJS Web Page Module
 ___
 ### Overview
-This class is still rather basic - might extend it, while there is some practical use for certain methods.
+This class is still rather basic - might extend it, while I see some practical use.
 
 ### Usage
 
