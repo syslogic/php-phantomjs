@@ -44,6 +44,7 @@ class phantomjs {
         /* Page Abstraction */
         $this->page = (object)array(
             'zoomFactor'    => 1.0,
+            'scrollPosition'=> (object)array('top' => 0, 'left' => 0),
             'viewportSize'  => (object)array('width' => 1920, 'height' => 1080),
             'clipRect'      => (object)array('width' => 1920, 'height' => 1080, 'top' => 0, 'left' => 0),
             'paperSize'     => (object)array('format' => 'A4', 'orientation' => 'portrait', 'margin' => '10mm'),
@@ -140,7 +141,17 @@ class phantomjs {
         $this->exec($task, $output);
     }
     
+    
     /* Getters */
+    private function getScrollPosition(){
+        return $this->page->scrollPosition;
+    }
+    private function getScrollPositionTop(){
+        return $this->page->scrollPosition->top;
+    }
+    private function getScrollPositionLeft(){
+        return $this->page->scrollPosition->left;
+    }
     private function getZoomFactor(){
         return $this->page->zoomFactor;
     }
@@ -178,9 +189,19 @@ class phantomjs {
         return $this->page->paperSize->margin;
     }
     
+    
     /* Setters */
+    private function setScrollPosition($top=0, $left=0){
+        $this->page->scrollPosition = (object)array('top' => $top, 'left' => $left);
+    }
+    private function setScrollPositionTop($value=0){
+        $this->page->scrollPosition->top=$value;
+    }
+    private function setScrollPositionLeft($value=0){
+        $this->page->scrollPosition->left=$value;
+    }
     private function setZoomFactor($factor = 1.0){
-        if(is_float($factor) && $factor >= 0 && $factor <= 1){
+        if(is_float($factor) && $factor > 0.0 && $factor <= 1.0){
             $this->page->zoomFactor=$factor;
         } else if(is_int($factor) && $factor > 0 && $factor <= 100){
             $this->page->zoomFactor=$factor/100;
@@ -231,6 +252,7 @@ class phantomjs {
             $this->render();
         }
     }
+    
     
     private function exec($task, $output){
         if(file_exists($task) && is_readable($task)){
