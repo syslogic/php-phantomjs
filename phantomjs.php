@@ -109,23 +109,24 @@ class phantomjs {
     
     public function screenshot($url=false, $output=false, $format='png', $quality=100){
         
-        /* TODO: Parameters */
-        if(in_array($format, $this->screenshot_formats)){$this->screenshot_format = $format;}
-        if($quality > 0 && $quality <= 100){$this->screenshot_quality = $quality;}
+        /* Parameters */
+        
+        /* TODO */
         if(! $url){if(! $output){return false;} else {return false;}}
         else {$parts = parse_url($url);}
+        
+        if(in_array($format, $this->screenshot_formats)){$this->screenshot_format = $format;}
+        if($quality > 0 && $quality <= 100){$this->screenshot_quality = $quality;}
+        
+        /* Phantom WebPage Module */
+        $this->script = "var page = require('webpage').create();\n";
         
         /* Viewport Dimensions */
         $width  = $this->getViewportWidth();
         $height = $this->getViewportHeight();
-        
-        /* WebPage Module */
-        $this->script = "var page = require('webpage').create();\n";
-        
-        /* Viewport Dimensions */
         $this->script.= "page.viewportSize = {width: {$width}, height: {$height}};\n";
         
-        /* Clip Rectangle */
+        /* Clip Rectangle, if applicable */
         if($this->screenshot_clip) {
             $crw = $this->getClipRectWidth();
             $crh = $this->getClipRectHeight();
@@ -140,7 +141,7 @@ class phantomjs {
         }
         
         /* Viewport Zoom Factor */
-        if($this->page->zoomFactor < 1.0){
+        if($this->page->zoomFactor != 1.0){
             $this->script.= "page.zoomFactor = {$this->page->zoomFactor};\n";
         }
         
