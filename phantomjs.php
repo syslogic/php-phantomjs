@@ -105,19 +105,26 @@ class phantomjs {
         $width  = $this->getViewportWidth();
         $height = $this->getViewportHeight();
         
-        /* Clip Rectangle Dimensions */
-        $crw    = $this->getClipRectWidth();
-        $crh    = $this->getClipRectHeight();
-        $crt    = $this->getClipRectTop();
-        $crl    = $this->getClipRectLeft();
-        
         /* JavaScript Generation */
         $parts  = parse_url($url);
         $this->screenshot_file = 'capture'.DIRECTORY_SEPARATOR.str_replace('www.', '', $parts['host']).'_'.crc32($url).'_'.$width.'x'.$height.'.'.$format;
         $this->script = "var page = require('webpage').create();\n";
         $this->script.= "page.viewportSize = {width: {$width}, height: {$height}};\n";
-        if($this->screenshot_clip) {$this->script.= "page.clipRect = {top: {$crt}, left: {$crl}, width: {$crw}, height: {$crh}};\n";}
-        if($this->browser_ua)      {$this->script.= "page.settings.userAgent = '{$this->user_agent}';\n";}
+        
+        /* Clip Rectangle */
+        if($this->screenshot_clip) {
+            $crw    = $this->getClipRectWidth();
+            $crh    = $this->getClipRectHeight();
+            $crt    = $this->getClipRectTop();
+            $crl    = $this->getClipRectLeft();
+            $this->script.= "page.clipRect = {top: {$crt}, left: {$crl}, width: {$crw}, height: {$crh}};\n";
+        }
+        
+        /* Passing the browser's UA */
+        if($this->browser_ua){
+            $this->script.= "page.settings.userAgent = '{$this->user_agent}';\n";
+        }
+        
         $this->script.= "page.open('{$url}', function() {\n\tpage.render('{$this->screenshot_file}', {format: '{$this->screenshot_format}', quality: '{$this->screenshot_quality}'});\n\tphantom.exit();\n});";
         $task = $this->scripts.str_replace('www.', '', $parts['host']).'_'.crc32($this->script).'.js';
         file_put_contents($task, $this->script);
