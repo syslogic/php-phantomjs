@@ -128,7 +128,7 @@ class phantomjs {
         
         /* Device Pixel Ratio (not yet supported) */
         if($this->page->devicePixelRatio > 1.0){
-            $this->script.= "page.devicePixelRatio = {$this->page->devicePixelRatio};\n";
+            $this->script.= "// page.devicePixelRatio = {$this->page->devicePixelRatio};\n";
         }
         
         /* Viewport Dimensions */
