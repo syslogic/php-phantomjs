@@ -118,41 +118,41 @@ class phantomjs {
         if(in_array($format, $this->screenshot_formats)){$this->screenshot_format = $format;}
         if($quality > 0 && $quality <= 100){$this->screenshot_quality = $quality;}
         
-        /* Phantom WebPage Module */
+        /* Phantom Web Page Module */
         $this->script = "var page = require('webpage').create();\n";
-        
-        /* Viewport Dimensions */
-        $width  = $this->getViewportWidth();
-        $height = $this->getViewportHeight();
-        $this->script.= "page.viewportSize = {width: {$width}, height: {$height}};\n";
-        
-        /* Clip Rectangle, if applicable */
-        if($this->screenshot_clip) {
-            $crw = $this->getClipRectWidth();
-            $crh = $this->getClipRectHeight();
-            $crt = $this->getClipRectTop();
-            $crl = $this->getClipRectLeft();
-            $this->script.= "page.clipRect = {top: {$crt}, left: {$crl}, width: {$crw}, height: {$crh}};\n";
-        }
         
         /* User Agent */
         if($this->browser_ua){
             $this->script.= "page.settings.userAgent = '{$this->user_agent}';\n";
         }
         
+        /* Device Pixel Ratio (not yet supported) */
+        if($this->page->devicePixelRatio > 1.0){
+            $this->script.= "page.devicePixelRatio = {$this->page->devicePixelRatio};\n";
+        }
+        
+        /* Viewport Dimensions */
+        $width  = $this->getViewportWidth();
+        $height = $this->getViewportHeight();
+        $this->script.= "page.viewportSize = {width: {$width}, height: {$height}};\n";
+        
         /* Viewport Zoom Factor */
         if($this->page->zoomFactor != 1.0){
             $this->script.= "page.zoomFactor = {$this->page->zoomFactor};\n";
         }
         
-        /* Scroll Position */
+        /* Viewport Scroll Position */
         if($this->page->scrollPosition->left > 0 || $this->page->scrollPosition->top > 0){
             $this->script.= "page.scrollPosition = {left: {$this->page->scrollPosition->left}, top: {$this->page->scrollPosition->top}};\n";
         }
         
-        /* Pixel Ratio (not yet supported) */
-        if($this->page->devicePixelRatio > 1.0){
-            $this->script.= "page.devicePixelRatio = {$this->page->devicePixelRatio};\n";
+        /* Clip Rectangle */
+        if($this->screenshot_clip) {
+            $crw = $this->getClipRectWidth();
+            $crh = $this->getClipRectHeight();
+            $crt = $this->getClipRectTop();
+            $crl = $this->getClipRectLeft();
+            $this->script.= "page.clipRect = {top: {$crt}, left: {$crl}, width: {$crw}, height: {$crh}};\n";
         }
         
         /* Capture File */

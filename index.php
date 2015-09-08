@@ -12,7 +12,6 @@ if(file_exists($path)){
     $phantomjs = new phantomjs();
     
     $phantomjs->screenshot("https://www.google.com", true);
-    // $phantomjs->jasmine("http://phantomjs/specs.html", true);
     
 } else {
     die('class file is absent: '.$path);
