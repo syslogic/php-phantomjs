@@ -38,12 +38,12 @@ class phantomjs {
     function __construct(){
         $this->user_agent = $_SERVER["HTTP_USER_AGENT"];
         $this->setup_dirs();
-        $this->setup_webpage();
         $this->sanity_check();
+        $this->setup_page();
     }
     
     /* http://phantomjs.org/api/webpage/ */
-    private function setup_webpage(){
+    private function setup_page(){
         
         /* TODO: Page Abstraction */
         $this->page = (object)array(
