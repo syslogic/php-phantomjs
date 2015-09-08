@@ -21,16 +21,17 @@ class phantomjs {
     protected $page;
     
     /* private */
-    private $url                  = null;
-    private $method               = 'GET';
-    private $output               = 'json';
-    private $screenshot_formats   = array('png', 'gif', 'jpeg', 'pdf');
+    private $url                = null;
+    private $method             = 'GET';
+    private $output             = 'json';
+    private $screenshot_formats = array('png', 'gif', 'jpeg', 'pdf');
     private $screenshot_file;
     private $user_agent;
     private $basedir;
     private $capture;
     private $scripts;
     private $script;
+    
     private $request;
     private $response;
 
@@ -51,6 +52,10 @@ class phantomjs {
             'clipRect'         => (object)array('width' => 1920, 'height' => 1080, 'top' => 0, 'left' => 0),
             'paperSize'        => (object)array('format' => 'A4', 'orientation' => 'portrait', 'margin' => '10mm'),
             'customHeaders'    => (object)array(),
+            'cookies'          => array(),
+            'libraryPath'      => '',
+            'devicePixelRatio' => 1.0,
+            'zoomFactor'       => 1.0,
             'settings'         => (object)array(
                 'javascriptEnabled'             => true,
                 'loadImages'                    => true,
@@ -62,14 +67,11 @@ class phantomjs {
                 'webSecurityEnabled'            => true,
                 'resourceTimeout'               => 20000
             ),
-            'devicePixelRatio' => 1.0,
-            'zoomFactor'       => 1.0,
-            'cookies'          => array(),
             'windowName'       => '',
+            'url'              => '',
             'title'            => '',
             'content'          => '',
-            'plainText'        => '',
-            'url'              => ''
+            'plainText'        => ''
         );
     }
     
