@@ -5,16 +5,16 @@
  *  Some rights reserved. See LICENSE.txt
  */
 
-$path=dirname(__FILE__).DIRECTORY_SEPARATOR.'phantomjs.php';
+$path = dirname(__FILE__).DIRECTORY_SEPARATOR.'phantomjs.php';
 if(file_exists($path)){
     
     require_once($path);
     $phantomjs = new phantomjs();
     
-    // $phantomjs->screenshot("https://www.google.com", true);
-    $phantomjs->jasmine("http://phantomjs/specs.html", true);
+    $phantomjs->screenshot("https://www.google.com", true);
+    // $phantomjs->jasmine("http://phantomjs/specs.html", true);
     
 } else {
-    die('file absent: '.$path);
+    die('class file is absent: '.$path);
 }
 ?>

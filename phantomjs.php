@@ -8,6 +8,7 @@
 class phantomjs {
     
     protected $page;
+    protected $capture;
     protected $scripts;
     protected $script;
     
@@ -15,37 +16,62 @@ class phantomjs {
     protected $request;
     protected $response;
     
-    protected $url             = null;
-    protected $method          = 'GET';
-    protected $output          = 'json';
-    protected $tag             = 'phantomjs';
-    protected $clip_screenshot = false;
+    protected $url              = null;
+    protected $method           = 'GET';
+    protected $output           = 'json';
+    protected $cmd              = 'phantomjs';
+    protected $tag              = 'phantomjs';
+    
+    private $client_ua;
+    private $browser_ua         = true;
+    private $screenshot_clip    = false;
+    
+    private $screenshot_file;
+    private $supported_formats  = array('png', 'gif', 'jpeg', 'pdf');
+    private $screenshot_format  = 'png';
+    private $screenshot_quality = 100;
     
     function __construct(){
-        
-        $this->setup_directories();
+        $this->client_ua = $_SERVER["HTTP_USER_AGENT"];
+        $this->setup_dirs();
+        $this->setup_webpage();
         $this->sanity_check();
+    }
+    
+    /* http://phantomjs.org/api/webpage/ */
+    private function setup_webpage(){
         
-        $this->page = (object) array(
-            'viewportSize' => (object)array('width' => 1024, 'height' => 768),
-                'clipRect' => (object)array('width' => 1024, 'height' => 768, 'top' => 0, 'left' => 0),
+        /* Page Abstraction */
+        $this->page = (object)array(
+            'viewportSize'  => (object)array('width' => 1920, 'height' => 1080),
+            'clipRect'      => (object)array('width' => 1920, 'height' => 1080, 'top' => 0, 'left' => 0),
+            'paperSize'     => (object)array('format' => 'A4', 'orientation' => 'portrait', 'margin' => '10mm'),
+            'customHeaders' => (object)array(),
+            'settings'      => (object)array(),
+            'cookies'       => array(),
+            'windowName'    => '',
+            'title'         => '',
+            'content'       => '',
+            'plainText'     => ''
         );
     }
     
-    private function setup_directories(){
-        $this->basedir   = dirname(__FILE__).DIRECTORY_SEPARATOR;
-        $this->scripts   = $this->basedir.'scripts'.DIRECTORY_SEPARATOR;
-        if(! is_dir($this->scripts)){
-            
-            // setsebool -P httpd_unified 1
-            // setsebool -P httpd_execmem 1
-             
-            if(mkdir(rtrim($this->scripts, DIRECTORY_SEPARATOR), 0775)){
-                file_put_contents($this->scripts.'.htaccess', 'deny from all');
+    private function setup_dirs(){
+        $this->basedir = dirname(__FILE__).DIRECTORY_SEPARATOR;
+        $this->scripts = $this->basedir.'scripts'.DIRECTORY_SEPARATOR;
+        $this->capture = $this->basedir.'capture'.DIRECTORY_SEPARATOR;
+        $this->create_dir($this->scripts, true);
+        $this->create_dir($this->capture, false);
+    }
+    private function create_dir($directory='', $htaccess=false){
+        if(! is_dir($directory)){
+            if(mkdir(rtrim($directory), 0775)){
+                if($htaccess){
+                    file_put_contents($directory.'.htaccess', 'deny from all');
+                }
             }
         }
     }
-    
     private function sanity_check(){
         $version = explode('.', shell_exec('phantomjs -v'));
         if((int)$version[0] < 2){
@@ -57,16 +83,17 @@ class phantomjs {
         if(! is_dir(rtrim($this->scripts, DIRECTORY_SEPARATOR))){
             die('['.$this->tag.'] directory '.$this->scripts.' is absent.');
         }
+        if(! is_dir(rtrim($this->capture, DIRECTORY_SEPARATOR))){
+            die('['.$this->tag.'] directory '.$this->capture.' is absent.');
+        }
     }
     
-    /* TODO: rather display an index.html */
-    public function index(){
-        $this->response='<html><head><title>php-phantomjs</title></head><body>'.''.'</body></html>';
-        $this->output='html';
-        $this->render();
-    }
-    
-    public function screenshot($url = false, $output= false){
+    public function screenshot($url=false, $output=false, $format='png', $quality=100){
+        
+        /* Parameters */
+        if(! $url){if(! $output){return false;} else {return false;}}
+        if(in_array($format, $this->supported_formats)){$this->screenshot_format = $format;}
+        if($quality > 0 && $quality <= 100){$this->screenshot_quality = $quality;}
         
         /* Viewport Dimensions */
         $width  = $this->getViewportWidth();
@@ -80,13 +107,14 @@ class phantomjs {
         
         /* JavaScript Generation */
         $parts  = parse_url($url);
-        $screen = str_replace('www.', '', $parts['host']).'_'.crc32($url).'_'.$width.'x'.$height.'.jpg';
-        $this->script = "var page = require('webpage').create();\npage.viewportSize = {width: {$width}, height: {$height}};\n";
-        if($this->clip_screenshot) {
-            $this->script .= "page.clipRect = {top: {$crt}, left: {$crl}, width: {$crw}, height: {$crh}};\n";
-        }
-        $this->script .= "page.open('{$url}', function() {\n\tpage.render('{$screen}');\n\tphantom.exit();\n});";
+        $this->screenshot_file = $this->capture.str_replace('www.', '', $parts['host']).'_'.crc32($url).'_'.$width.'x'.$height.'.'.$format;
+        $this->script = "var page = require('webpage').create();\n";
+        $this->script.= "page.viewportSize = {width: {$width}, height: {$height}};\n";
+        if($this->screenshot_clip) {$this->script.= "page.clipRect = {top: {$crt}, left: {$crl}, width: {$crw}, height: {$crh}};\n";}
+        if($this->browser_ua)      {$this->script.= "page.settings.userAgent = '{$this->client_ua}';\n";}
+        $this->script.= "page.open('{$url}', function() {\n\tpage.render('{$this->screenshot_file}', {format: '{$this->screenshot_format}', quality: '{$this->screenshot_quality}'});\n\tphantom.exit();\n});";
         $task = $this->scripts.str_replace('www.', '', $parts['host']).'_'.crc32($this->script).'.js';
+        
         file_put_contents($task, $this->script);
         $this->exec($task, $output);
     }
@@ -95,16 +123,25 @@ class phantomjs {
         
         /* JavaScript Generation */
         $parts  = parse_url($url);
-        
-        /* TODO */
-        $this->script = "var system = require('system');\n";
-        
-        $task = $this->scripts.str_replace('www.', '', $parts['host']).'_'.crc32($this->script).'.js';
+        $this->script = "var url  = '$url'\n;var system=require('system'), page=require('webpage').create();\npage.onConsoleMessage=function(msg) {console.log(msg);};\n";
+        $this->script.= "page.open(url, function(status) {
+            if (status !== 'success') {
+                console.log('Unable to open ' + url );
+                phantom.exit(1);
+            } else {
+                console.log('opened ' + url );
+                phantom.exit(0);
+            }
+        });";
+        $task = $this->scripts.str_replace('www.', '', $parts['host']).'_jasmine_'.crc32($this->script).'.js';
         file_put_contents($task, $this->script);
         $this->exec($task, $output);
     }
     
-    /* Property Getters */
+    /* Getters */
+    private function getViewportSize(){
+        return $this->page->viewportSize;
+    }
     private function getViewportWidth(){
         return $this->page->viewportSize->width;
     }
@@ -123,17 +160,36 @@ class phantomjs {
     private function getClipRectLeft(){
         return $this->page->clipRect->left;
     }
+    private function getPaperSize(){
+        return $this->page->PaperSize;
+    }
+    private function getPaperFormat(){
+        return $this->page->paperSize->format;
+    }
+    private function getPaperOrientation(){
+        return $this->page->paperSize->orientation;
+    }
+    private function getPaperMargin(){
+        return $this->page->paperSize->margin;
+    }
     
-    /* Property Setters */
+    /* Setters */
     private function setViewportSize($width, $height){
         if(is_numeric($width) && is_numeric($height)){
             $this->page->viewportSize->width  = ceil($width);
             $this->page->viewportSize->height = ceil($height);
         }
     }
+    private function setPaperSize($format, $orientation, $margin){
+        if(isset($format) && isset($orientation) &&isset($margin)){
+            $this->page->paperSize->format      = $format;
+            $this->page->paperSize->orientation = $orientation;
+            $this->page->paperSize->margin      = $margin;
+        }
+    }
     
-    /* TODO: check if the clipRect not exceeds the viewportSize */
-    private function setClipRect($width=false, $height=false, $top=false, $left=false){
+    /* TODO: check if the clipRect not exceeds the viewportSize ? */
+    private function setClipRect($width=false, $height=false, $top=0, $left=0){
         if(is_numeric($width) && is_numeric($height)){
             $this->page->clipRect->width  = ceil($width);
             $this->page->clipRect->height = ceil($height);
@@ -166,7 +222,7 @@ class phantomjs {
     
     private function exec($task, $output){
         if(file_exists($task) && is_readable($task)){
-            $stdOut = shell_exec('phantomjs '.$task);
+            shell_exec($this->cmd.' '.$task);
             if($output){
                 $this->response=array('success' => true, 'script' => $task);
                 $this->render();
@@ -185,7 +241,6 @@ class phantomjs {
                 }
                 die(json_encode((object)$this->response));
                 break;
-
             case 'html':
                 header('Content-type: text/html; Charset=utf8;');
                 die(preg_replace('(\t|\n)', '', $this->response));
