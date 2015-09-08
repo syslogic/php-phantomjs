@@ -43,6 +43,7 @@ class phantomjs {
         
         /* Page Abstraction */
         $this->page = (object)array(
+            'zoomFactor'    => 1.0,
             'viewportSize'  => (object)array('width' => 1920, 'height' => 1080),
             'clipRect'      => (object)array('width' => 1920, 'height' => 1080, 'top' => 0, 'left' => 0),
             'paperSize'     => (object)array('format' => 'A4', 'orientation' => 'portrait', 'margin' => '10mm'),
@@ -52,7 +53,8 @@ class phantomjs {
             'windowName'    => '',
             'title'         => '',
             'content'       => '',
-            'plainText'     => ''
+            'plainText'     => '',
+            'url'           => ''
         );
     }
     
@@ -139,6 +141,9 @@ class phantomjs {
     }
     
     /* Getters */
+    private function getZoomFactor(){
+        return $this->page->zoomFactor;
+    }
     private function getViewportSize(){
         return $this->page->viewportSize;
     }
@@ -174,6 +179,13 @@ class phantomjs {
     }
     
     /* Setters */
+    private function setZoomFactor($factor = 1.0){
+        if(is_float($factor) && $factor >= 0 && $factor <= 1){
+            $this->page->zoomFactor=$factor;
+        } else if(is_int($factor) && $factor > 0 && $factor <= 100){
+            $this->page->zoomFactor=$factor/100;
+        }
+    }
     private function setViewportSize($width, $height){
         if(is_numeric($width) && is_numeric($height)){
             $this->page->viewportSize->width  = ceil($width);
