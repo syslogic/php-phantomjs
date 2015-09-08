@@ -1,7 +1,6 @@
-![alt text](http://www.codefx.biz/favicon.ico "php-phantomjs")
 # php-phantomjs
 ###a PHP5 wrapper for the PhantomJS Web Page Module
-
+___
 ### Overview
 This class is still rather basic - might extend it, while there is some practical use for certain methods.
 
