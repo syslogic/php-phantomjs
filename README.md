@@ -1,5 +1,5 @@
 # php-phantomjs
-###a PHP5 wrapper for the PhantomJS Web Page Module
+### a PHP5 wrapper for the PhantomJS Web Page Module
 ___
 ### Overview
 This class is still rather basic - might extend it, while I see some practical use.
